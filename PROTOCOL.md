@@ -16,6 +16,7 @@ Observed setup:
 - Indoor unit: `S-100PF1E5A`
 - Outdoor unit: `U-100PEY1E5`
 - ESP: ESP32-C3
+- Hardware reference: Ingenious Makers P11 (`https://www.ingeniousmakers.com/p11`)
 - UART:
   - baud: `2400`
   - data bits: `8`
@@ -509,15 +510,6 @@ temperature_unit_select:
   name: Panasonic AC Temperature Unit
 ```
 
-Backward-compatible old YAML keys may still exist:
-
-```yaml
-ventilation_output_switch:
-remote_temperature_sensor_switch:
-fahrenheit_switch:
-```
-
-But they should produce select entities, not switch entities.
 
 Options:
 

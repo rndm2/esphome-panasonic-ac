@@ -63,10 +63,6 @@ PANASONIC_WLAN_SCHEMA = {
     cv.Optional(CONF_VENTILATION_OUTPUT_SELECT): VENTILATION_OUTPUT_SELECT_SCHEMA,
     cv.Optional(CONF_REMOTE_TEMPERATURE_SENSOR_SELECT): REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA,
     cv.Optional(CONF_TEMPERATURE_UNIT_SELECT): TEMPERATURE_UNIT_SELECT_SCHEMA,
-    # Backward-compatible YAML aliases. They create select entities, not switches.
-    cv.Optional(CONF_VENTILATION_OUTPUT_SWITCH): VENTILATION_OUTPUT_SELECT_SCHEMA,
-    cv.Optional(CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH): REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA,
-    cv.Optional(CONF_FAHRENHEIT_SWITCH): TEMPERATURE_UNIT_SELECT_SCHEMA,
     cv.Optional(CONF_TARGET_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SCHEMA,
     cv.Optional(CONF_CURRENT_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SCHEMA,
     cv.Optional(CONF_OUTDOOR_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SCHEMA,
@@ -98,20 +94,20 @@ async def to_code(config):
         await cg.register_component(eco_switch, conf)
         cg.add(var.set_eco_switch(eco_switch))
 
-    if CONF_VENTILATION_OUTPUT_SELECT in config or CONF_VENTILATION_OUTPUT_SWITCH in config:
-        conf = config.get(CONF_VENTILATION_OUTPUT_SELECT) or config[CONF_VENTILATION_OUTPUT_SWITCH]
+    if CONF_VENTILATION_OUTPUT_SELECT in config:
+        conf = config[CONF_VENTILATION_OUTPUT_SELECT]
         ventilation_output_select = await select.new_select(conf, options=["Not Connected", "Connected"])
         await cg.register_component(ventilation_output_select, conf)
         cg.add(var.set_ventilation_output_select(ventilation_output_select))
 
-    if CONF_REMOTE_TEMPERATURE_SENSOR_SELECT in config or CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH in config:
-        conf = config.get(CONF_REMOTE_TEMPERATURE_SENSOR_SELECT) or config[CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH]
+    if CONF_REMOTE_TEMPERATURE_SENSOR_SELECT in config:
+        conf = config[CONF_REMOTE_TEMPERATURE_SENSOR_SELECT]
         remote_temperature_sensor_select = await select.new_select(conf, options=["Main Unit", "Remote Controller"])
         await cg.register_component(remote_temperature_sensor_select, conf)
         cg.add(var.set_remote_temperature_sensor_select(remote_temperature_sensor_select))
 
-    if CONF_TEMPERATURE_UNIT_SELECT in config or CONF_FAHRENHEIT_SWITCH in config:
-        conf = config.get(CONF_TEMPERATURE_UNIT_SELECT) or config[CONF_FAHRENHEIT_SWITCH]
+    if CONF_TEMPERATURE_UNIT_SELECT in config:
+        conf = config[CONF_TEMPERATURE_UNIT_SELECT]
         temperature_unit_select = await select.new_select(conf, options=["Celsius", "Fahrenheit"])
         await cg.register_component(temperature_unit_select, conf)
         cg.add(var.set_temperature_unit_select(temperature_unit_select))

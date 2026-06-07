@@ -43,6 +43,29 @@ Tested target:
 Other Panasonic PACi units likely use a similar protocol, but they are not confirmed.
 Non-PACi Panasonic products (Etherea/residential splits, Aquarea, VRF/ME) are not supported.
 
+## Hardware / Wiring
+
+This component needs a UART interface connected to the Panasonic PACi controller/WLAN bus.
+
+A convenient hardware reference is the **P11** board by Ingenious Makers:
+
+```text
+https://www.ingeniousmakers.com/p11
+```
+
+The target setup used for development is an ESP32-C3 connected to the PACi UART bus with:
+
+- TX: GPIO21
+- RX: GPIO20
+- UART: 2400 baud, 8 data bits, even parity, 1 stop bit
+
+Important wiring/protocol rule:
+
+- The ESP component transmits as source `0xE0` only.
+- The wired wall controller uses source `0x40`; this component only listens to `0x40` frames and never transmits as `0x40`.
+
+Check the P11 hardware documentation and your unit's service documentation before connecting anything to the indoor unit bus.
+
 ## UART Settings
 
 The observed bus uses:
