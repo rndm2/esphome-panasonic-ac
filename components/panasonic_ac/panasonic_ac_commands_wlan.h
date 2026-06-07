@@ -122,8 +122,8 @@ static constexpr uint8_t EVENT_POWER_ON = 0x01;
 static constexpr uint8_t STATUS_PAYLOAD_POWER_MODE_INDEX = 0;
 static constexpr uint8_t STATUS_PAYLOAD_FAN_INDEX = 1;
 static constexpr uint8_t STATUS_PAYLOAD_TARGET_TEMP_INDEX = 4;
-static constexpr uint8_t STATUS_PAYLOAD_CURRENT_TEMP_CANDIDATE_INDEX = 5;
-static constexpr uint8_t STATUS_PAYLOAD_POWERSAVE_CANDIDATE_INDEX = 8;
+static constexpr uint8_t STATUS_PAYLOAD_CURRENT_TEMP_INDEX = 5;
+static constexpr uint8_t STATUS_PAYLOAD_POWERSAVE_INDEX = 8;
 
 static constexpr uint8_t STATUS_POWER_MASK = 0x01;
 static constexpr uint8_t STATUS_MODE_SHIFT = 5;

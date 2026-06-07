@@ -277,7 +277,7 @@ Minimal configuration:
 
 ```yaml
 external_components:
-  source: github://rndm2/esphome-panasonic-ac
+  source: github://rndm2/esphome-panasonic-paci
   components: [panasonic_ac]
 
 uart:
