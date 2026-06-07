@@ -1,23 +1,21 @@
 from esphome.const import (
     DEVICE_CLASS_TEMPERATURE,
-    DEVICE_CLASS_POWER,
     STATE_CLASS_MEASUREMENT,
     UNIT_CELSIUS,
-    UNIT_WATT,
 )
 import esphome.codegen as cg
 import esphome.config_validation as cv
-from esphome.components import uart, climate, sensor, select, switch
+from esphome.components import uart, climate, sensor, switch, select, text_sensor
 
-AUTO_LOAD = ["switch", "sensor", "select"]
+from . import panasonic_ac_ns
+
 DEPENDENCIES = ["uart"]
+AUTO_LOAD = ["sensor", "switch", "select", "text_sensor"]
 
-panasonic_ac_ns = cg.esphome_ns.namespace("panasonic_ac")
 PanasonicAC = panasonic_ac_ns.class_(
     "PanasonicAC", cg.Component, uart.UARTDevice, climate.Climate
 )
-panasonic_ac_cnt_ns = panasonic_ac_ns.namespace("CNT")
-PanasonicACCNT = panasonic_ac_cnt_ns.class_("PanasonicACCNT", PanasonicAC)
+
 panasonic_ac_wlan_ns = panasonic_ac_ns.namespace("WLAN")
 PanasonicACWLAN = panasonic_ac_wlan_ns.class_("PanasonicACWLAN", PanasonicAC)
 
@@ -28,56 +26,61 @@ PanasonicACSelect = panasonic_ac_ns.class_(
     "PanasonicACSelect", select.Select, cg.Component
 )
 
-
-CONF_HORIZONTAL_SWING_SELECT = "horizontal_swing_select"
-CONF_VERTICAL_SWING_SELECT = "vertical_swing_select"
-CONF_OUTSIDE_TEMPERATURE = "outside_temperature"
-CONF_CURRENT_TEMPERATURE_SENSOR = "current_temperature_sensor"
-CONF_NANOEX_SWITCH = "nanoex_switch"
-CONF_ECO_SWITCH = "eco_switch"
-CONF_ECONAVI_SWITCH = "econavi_switch"
-CONF_MILD_DRY_SWITCH = "mild_dry_switch"
-CONF_CURRENT_POWER_CONSUMPTION = "current_power_consumption"
 CONF_WLAN = "wlan"
-CONF_CNT = "cnt"
+CONF_ECO_SWITCH = "eco_switch"
+# PACi service/admin settings are selects, not switches.
+# Old *_switch YAML keys are accepted as aliases so existing configs keep compiling.
+CONF_VENTILATION_OUTPUT_SELECT = "ventilation_output_select"
+CONF_REMOTE_TEMPERATURE_SENSOR_SELECT = "remote_temperature_sensor_select"
+CONF_TEMPERATURE_UNIT_SELECT = "temperature_unit_select"
+CONF_VENTILATION_OUTPUT_SWITCH = "ventilation_output_switch"
+CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH = "remote_temperature_sensor_switch"
+CONF_FAHRENHEIT_SWITCH = "fahrenheit_switch"
 
-HORIZONTAL_SWING_OPTIONS = ["auto", "left", "left_center", "center", "right_center", "right"]
+CONF_TARGET_TEMPERATURE_SENSOR = "target_temperature_sensor"
+CONF_CURRENT_TEMPERATURE_SENSOR = "current_temperature_sensor"
+CONF_OUTDOOR_TEMPERATURE_SENSOR = "outdoor_temperature"
 
-VERTICAL_SWING_OPTIONS = ["swing", "auto", "up", "up_center", "center", "down_center", "down"]
+CONF_INDOOR_MODEL = "indoor_model"
+CONF_INDOOR_SERIAL = "indoor_serial"
+CONF_OUTDOOR_MODEL = "outdoor_model"
+CONF_OUTDOOR_SERIAL = "outdoor_serial"
 
 SWITCH_SCHEMA = switch.switch_schema(PanasonicACSwitch).extend(cv.COMPONENT_SCHEMA)
+VENTILATION_OUTPUT_SELECT_SCHEMA = select.select_schema(PanasonicACSelect).extend(cv.COMPONENT_SCHEMA)
+REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA = select.select_schema(PanasonicACSelect).extend(cv.COMPONENT_SCHEMA)
+TEMPERATURE_UNIT_SELECT_SCHEMA = select.select_schema(PanasonicACSelect).extend(cv.COMPONENT_SCHEMA)
 
-SELECT_SCHEMA = select.select_schema(PanasonicACSelect)
+TEMPERATURE_SENSOR_SCHEMA = sensor.sensor_schema(
+    unit_of_measurement=UNIT_CELSIUS,
+    accuracy_decimals=1,
+    device_class=DEVICE_CLASS_TEMPERATURE,
+    state_class=STATE_CLASS_MEASUREMENT,
+)
 
-PANASONIC_COMMON_SCHEMA = {
-    cv.Optional(CONF_HORIZONTAL_SWING_SELECT): SELECT_SCHEMA,
-    cv.Optional(CONF_VERTICAL_SWING_SELECT): SELECT_SCHEMA,
-    cv.Optional(CONF_OUTSIDE_TEMPERATURE): sensor.sensor_schema(
-        unit_of_measurement=UNIT_CELSIUS,
-        accuracy_decimals=0,
-        device_class=DEVICE_CLASS_TEMPERATURE,
-        state_class=STATE_CLASS_MEASUREMENT,
-    ),
-    cv.Optional(CONF_NANOEX_SWITCH): SWITCH_SCHEMA,
-}
-
-PANASONIC_CNT_SCHEMA = {
+PANASONIC_WLAN_SCHEMA = {
     cv.Optional(CONF_ECO_SWITCH): SWITCH_SCHEMA,
-    cv.Optional(CONF_ECONAVI_SWITCH): SWITCH_SCHEMA,
-    cv.Optional(CONF_MILD_DRY_SWITCH): SWITCH_SCHEMA,
-    cv.Optional(CONF_CURRENT_TEMPERATURE_SENSOR): cv.use_id(sensor.Sensor),
-    cv.Optional(CONF_CURRENT_POWER_CONSUMPTION): sensor.sensor_schema(
-        unit_of_measurement=UNIT_WATT,
-        accuracy_decimals=0,
-        device_class=DEVICE_CLASS_POWER,
-        state_class=STATE_CLASS_MEASUREMENT,
-    ),
+    cv.Optional(CONF_VENTILATION_OUTPUT_SELECT): VENTILATION_OUTPUT_SELECT_SCHEMA,
+    cv.Optional(CONF_REMOTE_TEMPERATURE_SENSOR_SELECT): REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA,
+    cv.Optional(CONF_TEMPERATURE_UNIT_SELECT): TEMPERATURE_UNIT_SELECT_SCHEMA,
+    # Backward-compatible YAML aliases. They create select entities, not switches.
+    cv.Optional(CONF_VENTILATION_OUTPUT_SWITCH): VENTILATION_OUTPUT_SELECT_SCHEMA,
+    cv.Optional(CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH): REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA,
+    cv.Optional(CONF_FAHRENHEIT_SWITCH): TEMPERATURE_UNIT_SELECT_SCHEMA,
+    cv.Optional(CONF_TARGET_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SCHEMA,
+    cv.Optional(CONF_CURRENT_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SCHEMA,
+    cv.Optional(CONF_OUTDOOR_TEMPERATURE_SENSOR): TEMPERATURE_SENSOR_SCHEMA,
+    cv.Optional(CONF_INDOOR_MODEL): text_sensor.text_sensor_schema(),
+    cv.Optional(CONF_INDOOR_SERIAL): text_sensor.text_sensor_schema(),
+    cv.Optional(CONF_OUTDOOR_MODEL): text_sensor.text_sensor_schema(),
+    cv.Optional(CONF_OUTDOOR_SERIAL): text_sensor.text_sensor_schema(),
 }
 
 CONFIG_SCHEMA = cv.typed_schema(
     {
-        CONF_WLAN: climate.climate_schema(PanasonicACWLAN).extend(PANASONIC_COMMON_SCHEMA).extend(uart.UART_DEVICE_SCHEMA),
-        CONF_CNT: climate.climate_schema(PanasonicACCNT).extend(PANASONIC_COMMON_SCHEMA).extend(PANASONIC_CNT_SCHEMA).extend(uart.UART_DEVICE_SCHEMA),
+        CONF_WLAN: climate.climate_schema(PanasonicACWLAN)
+        .extend(PANASONIC_WLAN_SCHEMA)
+        .extend(uart.UART_DEVICE_SCHEMA),
     }
 )
 
@@ -87,33 +90,57 @@ async def to_code(config):
     await cg.register_component(var, config)
     await uart.register_uart_device(var, config)
 
-    if CONF_HORIZONTAL_SWING_SELECT in config:
-        conf = config[CONF_HORIZONTAL_SWING_SELECT]
-        swing_select = await select.new_select(conf, options=HORIZONTAL_SWING_OPTIONS)
-        await cg.register_component(swing_select, conf)
-        cg.add(var.set_horizontal_swing_select(swing_select))
+    cg.add(var.set_controller_address(0xE0))
 
-    if CONF_VERTICAL_SWING_SELECT in config:
-        conf = config[CONF_VERTICAL_SWING_SELECT]
-        swing_select = await select.new_select(conf, options=VERTICAL_SWING_OPTIONS)
-        await cg.register_component(swing_select, conf)
-        cg.add(var.set_vertical_swing_select(swing_select))
+    if CONF_ECO_SWITCH in config:
+        conf = config[CONF_ECO_SWITCH]
+        eco_switch = await switch.new_switch(conf)
+        await cg.register_component(eco_switch, conf)
+        cg.add(var.set_eco_switch(eco_switch))
 
-    if CONF_OUTSIDE_TEMPERATURE in config:
-        sens = await sensor.new_sensor(config[CONF_OUTSIDE_TEMPERATURE])
-        cg.add(var.set_outside_temperature_sensor(sens))
+    if CONF_VENTILATION_OUTPUT_SELECT in config or CONF_VENTILATION_OUTPUT_SWITCH in config:
+        conf = config.get(CONF_VENTILATION_OUTPUT_SELECT) or config[CONF_VENTILATION_OUTPUT_SWITCH]
+        ventilation_output_select = await select.new_select(conf, options=["Not Connected", "Connected"])
+        await cg.register_component(ventilation_output_select, conf)
+        cg.add(var.set_ventilation_output_select(ventilation_output_select))
 
-    for s in [CONF_ECO_SWITCH, CONF_NANOEX_SWITCH, CONF_MILD_DRY_SWITCH, CONF_ECONAVI_SWITCH]:
-        if s in config:
-            conf = config[s]
-            a_switch = await switch.new_switch(conf)
-            await cg.register_component(a_switch, conf)
-            cg.add(getattr(var, f"set_{s}")(a_switch))
+    if CONF_REMOTE_TEMPERATURE_SENSOR_SELECT in config or CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH in config:
+        conf = config.get(CONF_REMOTE_TEMPERATURE_SENSOR_SELECT) or config[CONF_REMOTE_TEMPERATURE_SENSOR_SWITCH]
+        remote_temperature_sensor_select = await select.new_select(conf, options=["Main Unit", "Remote Controller"])
+        await cg.register_component(remote_temperature_sensor_select, conf)
+        cg.add(var.set_remote_temperature_sensor_select(remote_temperature_sensor_select))
+
+    if CONF_TEMPERATURE_UNIT_SELECT in config or CONF_FAHRENHEIT_SWITCH in config:
+        conf = config.get(CONF_TEMPERATURE_UNIT_SELECT) or config[CONF_FAHRENHEIT_SWITCH]
+        temperature_unit_select = await select.new_select(conf, options=["Celsius", "Fahrenheit"])
+        await cg.register_component(temperature_unit_select, conf)
+        cg.add(var.set_temperature_unit_select(temperature_unit_select))
+
+    if CONF_TARGET_TEMPERATURE_SENSOR in config:
+        sens = await sensor.new_sensor(config[CONF_TARGET_TEMPERATURE_SENSOR])
+        cg.add(var.set_target_temperature_sensor(sens))
 
     if CONF_CURRENT_TEMPERATURE_SENSOR in config:
-        sens = await cg.get_variable(config[CONF_CURRENT_TEMPERATURE_SENSOR])
+        sens = await sensor.new_sensor(config[CONF_CURRENT_TEMPERATURE_SENSOR])
         cg.add(var.set_current_temperature_sensor(sens))
 
-    if CONF_CURRENT_POWER_CONSUMPTION in config:
-        sens = await sensor.new_sensor(config[CONF_CURRENT_POWER_CONSUMPTION])
-        cg.add(var.set_current_power_consumption_sensor(sens))
+
+    if CONF_OUTDOOR_TEMPERATURE_SENSOR in config:
+        sens = await sensor.new_sensor(config[CONF_OUTDOOR_TEMPERATURE_SENSOR])
+        cg.add(var.set_outdoor_temperature_sensor(sens))
+
+    if CONF_INDOOR_MODEL in config:
+        sens = await text_sensor.new_text_sensor(config[CONF_INDOOR_MODEL])
+        cg.add(var.set_indoor_model_text_sensor(sens))
+
+    if CONF_INDOOR_SERIAL in config:
+        sens = await text_sensor.new_text_sensor(config[CONF_INDOOR_SERIAL])
+        cg.add(var.set_indoor_serial_text_sensor(sens))
+
+    if CONF_OUTDOOR_MODEL in config:
+        sens = await text_sensor.new_text_sensor(config[CONF_OUTDOOR_MODEL])
+        cg.add(var.set_outdoor_model_text_sensor(sens))
+
+    if CONF_OUTDOOR_SERIAL in config:
+        sens = await text_sensor.new_text_sensor(config[CONF_OUTDOOR_SERIAL])
+        cg.add(var.set_outdoor_serial_text_sensor(sens))

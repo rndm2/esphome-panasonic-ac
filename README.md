@@ -1,78 +1,339 @@
-# Overview
+# ESPHome Panasonic PACi UART Component
 
-An open source alternative for the Panasonic wi-fi adapter that works locally without the cloud.
+> **Scope: Panasonic PACi only.** This component targets Panasonic **PACi**
+> commercial/semi-commercial air conditioners (CZ-RTC controller bus, DNSK-P11/CN-WLAN/CN-CNT
+> style UART). It is **not** compatible with Panasonic Etherea/residential splits, Aquarea,
+> or VRF/ME systems — those use different protocols.
 
-# Features
+ESPHome climate component for Panasonic **PACi** air conditioners using the wired UART bus used by Panasonic wall controllers and WLAN/controller modules.
 
-* NEW: Support Ethera generation ACs
-* Control your AC locally via Home Assistant, MQTT or directly
-* Instantly control the AC without any delay like in the Comfort Cloud app
-* Receive live reports and state from the AC
-* Uses the UART interface on the AC instead of the IR interface
-* Provides a drop-in replacement for the Panasonic DNSK-P11 and the CZ-TACG1 wifi module and the newest PIOT-V2(WA) module
+This component is developed and tested against:
 
-# Supported hardware
+- Indoor unit: `S-100PF1E5A`
+- Outdoor unit: `U-100PEY1E5`
+- Bus: Panasonic PACi wired UART controller/WLAN bus
 
-This library works with both the CN-CNT port and the CN-WLAN port. CN-WLAN is only available on newer units. Either port can be used on units that have both ports regardless of the usage of the other port (ie. it is possible to leave the DNSK-P11 connected to CN-WLAN and connect the ESP to CN-CNT).
+The current implementation target is the `wlan` backend only. The name is historical; this is a wired UART protocol implementation, not a Wi-Fi cloud integration.
 
-Works on the ESP8266 but ESP32 is preferred for the multiple hardware serial ports.
+## Status
 
-# Requirements
+The protocol implementation is based on logic-analyzer captures from the target system.
 
-* ESP32 (or ESP8266) ([supported by ESPHome](https://esphome.io/#devices))
-* 5V to 3.3V bi-directional Logic Converter (minimum 2 channels, available as pre-soldered prototyping boards)
-* Female-Female Jumper cables
-* Soldering iron
-* Wires to solder from Logic converter to ESP
-* Heat shrink
-* ESPHome 2025.11.0 or newer
-* Home Assistant 2025.11.0 or newer
+Implemented protocol support:
 
-# Notes
+- UART transport with framing, logging, and XOR checksum validation
+- Status parsing (power, mode, fan, target/current temperature)
+- Power control
+- Mode control (heat, cool, dry, fan only, auto)
+- Target temperature control
+- Fan speed control
+- Eco/powersave control (exposed both as a switch and as an Eco climate preset)
+- Outdoor-unit reported temperature (extended `EF/21` query)
+- Selected service/admin settings read/write (exposed as selects)
 
-* **Make sure to disconnect mains power before opening your AC, the mains contacts are exposed and can be touched by accident!**
-* **Do not connect your ESP32/ESP8266 directly to the AC, the AC uses 5V while the ESPs use 3.3V!**
-* **While installation is fairly straightforward I do not take any responsibility for any damage done to you or your AC during installation**
-* The DNSK-P11 and the CZ-TACG1 use different types of connectors, make sure to connect to the correct one
+## Supported Hardware
 
-# Software installation
+Panasonic **PACi** systems only.
 
-This software installation guide assumes some familiarity with ESPHome.
+Tested target:
 
-* Pull this repository or copy the `ac.yaml.example` from the root folder
-* Rename the `ac.yaml.example` to `ac.yaml`
-* Uncomment the `type` field depending on which AC protocol you want to use
-* Adjust the `ac.yaml` to your needs
-* Connect your ESP
-* Run `esphome ac.yaml run` and choose your serial port (or do this via the Home Assistant UI)
-* If you see the handshake messages being sent (DNSK-P11) or polling requests being sent (CZ-TACG1) in the log you are good to go
-* Disconnect the ESP and continue with hardware installation
+- Indoor unit: `S-100PF1E5A`
+- Outdoor unit: `U-100PEY1E5`
 
-## Setting supported features
+Other Panasonic PACi units likely use a similar protocol, but they are not confirmed.
+Non-PACi Panasonic products (Etherea/residential splits, Aquarea, VRF/ME) are not supported.
 
-Since Panasonic ACs support different features you can comment out the lines at the bottom of your `ac.yaml`:
+## UART Settings
 
-```
-  # Enable as needed
-  # eco_switch:
-  #   name: Panasonic AC Eco Switch
-  # nanoex_switch:
-  #   name: Panasonic AC NanoeX Switch
-  # mild_dry_switch:
-  #   name: Panasonic AC Mild Dry Switch
-  # econavi_switch:
-  #   name: Econavi switch
-  # current_power_consumption:
-  #   name: Panasonic AC Power Consumption
+The observed bus uses:
+
+```yaml
+uart:
+  baud_rate: 2400
+  data_bits: 8
+  parity: EVEN
+  stop_bits: 1
 ```
 
-In order to find out which features are supported by your AC, check the remote that came with it. Please note that eco switch and mild dry switch are not supported on DNSK-P11.
+The protocol uses XOR checksums:
 
-**Enabling unsupported features can lead to undefined behavior and may damage your AC. Make sure to check your remote or manual first.**
-**current_power_consumption is just as ESTIMATED value by the AC**
+```text
+checksum = XOR of all bytes before the checksum byte
+XOR(full frame including checksum) == 0x00
+```
 
-# Hardware installation
+## Protocol Notes
 
-[Hardware installation for DNSK-P11](README.DNSKP11.md)
+See [`PROTOCOL.md`](PROTOCOL.md) for the detailed reverse-engineering notes, frame
+examples, parser notes, admin transactions, and known open questions.
 
-[Hardware installation for CZ-TACG1](README.CZTACG1.md)
+
+The PACi bus observed on the target unit uses `E0`, `40`, and `00` frame families.
+The first byte of a frame is the source address:
+
+- `E0` — this WLAN/controller adapter (every frame **this component sends** uses `E0`).
+- `40` — the wired wall remote controller (`0x20 << 1`). Frames starting with `40`
+  are the **real wired remote** talking on the bus; this component only listens to
+  them, it never transmits as `40`.
+- `00` — event/broadcast frames and most responses, including `00 E0 ...` responses
+  to this component's reads and `00 40 ...` responses to the wired controller.
+
+So when a capture shows the same command from both `40 ...` and `E0 ...`, the `40`
+version is the wired remote and the `E0` version is this component. The examples below
+use the `E0` source that this component actually sends.
+
+Common write frame format:
+
+```text
+[0] [1] [2] [LEN] [PAYLOAD len bytes] [XOR]
+```
+
+Examples:
+
+```text
+E0 00 11 03 08 41 83 38          # power on
+E0 00 11 03 08 42 02 BA          # cool mode
+E0 00 11 05 08 4C 0A 1A 76 D6    # cool target 24.0°C
+```
+
+## Basic Command Map
+
+### Power
+
+```text
+OFF = E0 00 11 03 08 41 82 39
+ON  = E0 00 11 03 08 41 83 38
+```
+
+### Modes
+
+```text
+HEAT     = E0 00 11 03 08 42 01 B9
+COOL     = E0 00 11 03 08 42 02 BA
+FAN_ONLY = E0 00 11 03 08 42 03 BB
+DRY      = E0 00 11 03 08 42 04 BC
+AUTO     = E0 00 11 03 08 42 05 BD
+```
+
+### Target Temperature
+
+Temperature encoding:
+
+```text
+raw = °C * 2 + 0x46
+°C = (raw - 0x46) / 2
+```
+
+Cool:
+
+```text
+E0 00 11 05 08 4C 0A 1A TT CS
+```
+
+Heat:
+
+```text
+E0 00 11 05 08 4C 09 2A TT CS
+```
+
+Dry:
+
+```text
+E0 00 11 05 08 4C 0C 1A TT CS
+```
+
+Auto / heat-cool auto mode writes the target into several auto slots (`0D`, `15`, `0E`)
+with kind `1D`; this is derived from PACi captures from the target unit.
+
+### Fan Speed
+
+Fan writes are mode-specific on the target PACi unit. The speed byte is:
+
+```text
+AUTO   = 1A
+HIGH   = 1B
+MEDIUM = 1C
+LOW    = 1D
+```
+
+Mode-specific slots:
+
+```text
+HEAT     = E0 00 11 05 08 4C 11 FF 00 00 CS
+COOL     = E0 00 11 05 08 4C 12 FF TT CS
+FAN_ONLY = E0 00 11 05 08 4C 13 FF 00 00 CS
+DRY      = E0 00 11 05 08 4C 14 FF 00 00 CS
+AUTO     = E0 00 11 05 08 4C 15 FF 00 00 CS
+```
+
+`FF` is the fan speed byte. `TT` is the current target temperature raw value and is used
+by the cool-mode fan slot.
+
+### Eco / Powersave
+
+```text
+OFF = E0 00 11 03 08 54 09 A7
+ON  = E0 00 11 03 08 54 0B A5
+```
+
+### Outdoor temperature
+
+Outdoor temperature is read from the extended `EF/21` query:
+
+```text
+E0 00 17 07 08 80 EF 00 21 00 20 96
+```
+
+The response value is parsed as big-endian tenths of °C:
+
+```text
+00 E0/40 1A 07 80 EF 80 00 21 HH LL CS
+temperature = ((HH << 8) | LL) / 10.0
+```
+
+The `0F` status block contains temperature-looking bytes but is **not** the
+authoritative outdoor-temperature source.
+
+## Status Parsing
+
+Main status frames contain an `80 81` payload.
+
+Observed shape:
+
+```text
+80 81 S0 S1 S2 S3 TT CT X1 X2 PS
+```
+
+Known fields:
+
+```text
+power = S0 & 0x01
+mode  = (S0 >> 5) & 0x07
+fan   = (S1 >> 5) & 0x07
+
+target_temperature = (TT - 0x46) / 2
+current_temperature = (CT - 0x46) / 2
+powersave = PS
+```
+
+Known mode values:
+
+```text
+1 = heat
+2 = cool
+3 = fan_only
+4 = dry
+5 = auto
+```
+
+Known fan values:
+
+```text
+2 = auto
+3 = high
+4 = medium
+5 = low
+```
+
+Current temperature and powersave status are parsed from confirmed target-unit captures.
+
+## Service/Admin Settings
+
+The service/admin settings namespace appears to be:
+
+```text
+08 07
+```
+
+Read setting (`KK` = code; `CS` = XOR over the preceding bytes):
+
+```text
+E0 00 15 04 08 07 00 KK CS      # e.g. read code 31: E0 00 15 04 08 07 00 31 CF
+```
+
+Write setting (`KK` = code, `VV` = value):
+
+```text
+E0 00 11 04 08 07 KK VV CS      # e.g. set 33=00 (°C): E0 00 11 04 08 07 33 00 C9
+```
+
+Confirmed PACi service/admin settings:
+
+| Code | Meaning | `00` | `01` |
+|---:|---|---|---|
+| `31` | Ventilation fan output setting | Not connected | Connected |
+| `32` | Room temperature sensor | Main unit | Remote controller |
+| `33` | Temperature display setting | °C | °F |
+
+These three settings are exposed in Home Assistant as `select` entities. After a write,
+the component reads the value back from the bus to confirm the change actually applied;
+an ACK alone only means the bus saw the command.
+
+Arbitrary service/admin writes should not be exposed until the specific PACi code and value encoding are confirmed.
+
+## Example ESPHome Configuration
+
+Minimal configuration:
+
+```yaml
+external_components:
+  source: github://rndm2/esphome-panasonic-ac
+  components: [panasonic_ac]
+
+uart:
+  id: ac_uart
+  tx_pin: GPIO21
+  rx_pin: GPIO20
+  baud_rate: 2400
+  data_bits: 8
+  parity: EVEN
+  stop_bits: 1
+
+climate:
+  - platform: panasonic_ac
+    type: wlan
+    name: "Panasonic AC"
+```
+
+Full configuration with the optional entities:
+
+```yaml
+climate:
+  - platform: panasonic_ac
+    type: wlan
+    name: "Panasonic AC"
+
+    # Eco/powersave. Also available as the "Eco" climate preset.
+    eco_switch:
+      name: "Panasonic AC Eco"
+
+    # Service/admin settings (HA select entities).
+    ventilation_output_select:
+      name: "Panasonic AC Ventilation Output"
+    remote_temperature_sensor_select:
+      name: "Panasonic AC Room Sensor Source"
+    temperature_unit_select:
+      name: "Panasonic AC Display Unit"
+
+    # Optional diagnostic sensors.
+    target_temperature_sensor:
+      name: "Panasonic AC Target Temperature"
+    current_temperature_sensor:
+      name: "Panasonic AC Current Temperature"
+    outdoor_temperature:
+      name: "Panasonic AC Outdoor Temperature"
+
+    # Unit identity, read from the bus.
+    indoor_model:
+      name: "Panasonic AC Indoor Model"
+    indoor_serial:
+      name: "Panasonic AC Indoor Serial"
+    outdoor_model:
+      name: "Panasonic AC Outdoor Model"
+    outdoor_serial:
+      name: "Panasonic AC Outdoor Serial"
+```
+
+## License
+
+MIT License.

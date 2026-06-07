@@ -1,61 +1,65 @@
+substitutions:
+  device_name: airiron-controller
+  device_friendly_name: AirIron Controller
+
 esphome:
-  name: panasonic-ac
+  name: "${device_name}"
+  friendly_name: "${device_friendly_name}"
 
 esp32:
-  board: nodemcu-32s
-
-wifi:
-  networks:
-  ap: {}
-
-logger:
-  level: DEBUG
-#  baud_rate: 0 # ESP8266 only
-
-api:
-
-ota:
-  platform: esphome
-
-# Requires ESPHome 1.15.0+ for the even parity option
-uart:
-  tx_pin: GPIO17
-  rx_pin: GPIO16
-  baud_rate: 9600
-  parity: EVEN
+  variant: esp32c3
+  framework:
+    type: esp-idf
 
 external_components:
-  source: github://DomiStyle/esphome-panasonic-ac
+  source: github://rndm2/esphome-panasonic-ac
   components: [panasonic_ac]
 
+logger:
+
+api:
+  encryption:
+    key: !secret airiron_controller_home_assistant_api_key
+
+ota:
+  - platform: esphome
+    password: !secret airiron_controller_esp_home_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  ap:
+      ssid: "AirIron-Controller"
+      password: !secret airiron_ap_password
+
+captive_portal:
+
+web_server:
+  port: 80
+  auth:
+    username: !secret web_login
+    password: !secret web_password
+
+uart:
+  tx_pin: GPIO21
+  rx_pin: GPIO20
+  id: ac_uart
+  baud_rate: 2400
+  data_bits: 8
+  parity: EVEN
+  stop_bits: 1
+
+button:
+  - platform: restart
+    name: "$device_friendly_name Restart"
 
 climate:
   - platform: panasonic_ac
-    # For CZ-TACG1
-    # type: cnt
+    id: panasonic_ac_climate
+    type: wlan
+    name: "$device_friendly_name"
 
-    # For DNSK-P11
-    # type: wlan
-
-    name: Panasonic AC
-    horizontal_swing_select:
-      name: Panasonic AC Horizontal Swing Mode
-    vertical_swing_select:
-      name: Panasonic AC Vertical Swing Mode
-    outside_temperature:
-      name: Panasonic AC Outside Temperature
-
-    # Enable as needed
-    # eco_switch:
-    #   name: Panasonic AC Eco Switch
-    # econavi_switch:
-    #   name: Panasonic AC Econavi Switch
-    # nanoex_switch:
-    #   name: Panasonic AC NanoeX Switch
-    # mild_dry_switch:
-    #   name: Panasonic AC Mild Dry Switch
-    # current_power_consumption:
-    #   name: Panasonic AC Power Consumption
-
-    # Useful when the ac does not report a current temperature (CZ-TACG1 only)
-    # current_temperature_sensor: temperature_sensor_id
+time:
+  - platform: homeassistant
+    id: my_time
