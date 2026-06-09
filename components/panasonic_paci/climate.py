@@ -29,7 +29,6 @@ PanasonicPaciSelect = panasonic_paci_ns.class_(
 CONF_WLAN = "wlan"
 CONF_ECO_SWITCH = "eco_switch"
 # PACi service/admin settings are selects, not switches.
-# Old *_switch YAML keys are accepted as aliases so existing configs keep compiling.
 CONF_VENTILATION_OUTPUT_SELECT = "ventilation_output_select"
 CONF_REMOTE_TEMPERATURE_SENSOR_SELECT = "remote_temperature_sensor_select"
 CONF_TEMPERATURE_UNIT_SELECT = "temperature_unit_select"
