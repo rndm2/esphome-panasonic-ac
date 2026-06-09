@@ -6,11 +6,11 @@
 #include <deque>
 
 #include "esphome/components/climate/climate.h"
-#include "panasonic_ac.h"
-#include "panasonic_ac_commands_wlan.h"
+#include "panasonic_paci.h"
+#include "panasonic_paci_commands_wlan.h"
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 namespace WLAN {
 
 static constexpr uint32_t RESPONSE_TIMEOUT = 800;
@@ -75,7 +75,7 @@ struct QueuedFrame {
   uint8_t attempt{1};
 };
 
-class PanasonicACWLAN : public PanasonicAC {
+class PanasonicPaciWLAN : public PanasonicPaci {
  public:
   void setup() override;
   void loop() override;
@@ -211,5 +211,5 @@ class PanasonicACWLAN : public PanasonicAC {
 };
 
 }  // namespace WLAN
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

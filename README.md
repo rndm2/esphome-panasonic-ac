@@ -301,7 +301,7 @@ Minimal configuration:
 ```yaml
 external_components:
   source: github://rndm2/esphome-panasonic-paci
-  components: [panasonic_ac]
+  components: [panasonic_paci]
 
 uart:
   id: ac_uart
@@ -313,7 +313,7 @@ uart:
   stop_bits: 1
 
 climate:
-  - platform: panasonic_ac
+  - platform: panasonic_paci
     type: wlan
     name: "Panasonic AC"
 ```
@@ -322,7 +322,7 @@ Full configuration with the optional entities:
 
 ```yaml
 climate:
-  - platform: panasonic_ac
+  - platform: panasonic_paci
     type: wlan
     name: "Panasonic AC"
 

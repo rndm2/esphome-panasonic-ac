@@ -7,9 +7,9 @@
 #include "esphome/core/component.h"
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 
-class PanasonicACSelect : public select::Select, public Component {
+class PanasonicPaciSelect : public select::Select, public Component {
  public:
   void set_write_callback(std::function<void(const std::string &)> &&callback) { this->write_callback_ = std::move(callback); }
 
@@ -25,5 +25,5 @@ class PanasonicACSelect : public select::Select, public Component {
   std::function<void(const std::string &)> write_callback_;
 };
 
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

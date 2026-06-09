@@ -4,12 +4,12 @@
 #include "esphome/core/component.h"
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 
-class PanasonicACSwitch : public switch_::Switch, public Component {
+class PanasonicPaciSwitch : public switch_::Switch, public Component {
  protected:
   void write_state(bool state) override { this->publish_state(state); }
 };
 
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

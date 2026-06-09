@@ -1,4 +1,4 @@
-#include "panasonic_ac_wlan.h"
+#include "panasonic_paci_wlan.h"
 
 #include <algorithm>
 #include <cmath>
@@ -8,13 +8,13 @@
 #include "esphome/core/log.h"
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 namespace WLAN {
 
-static const char *const TAG = "panasonic_ac.wlan";
+static const char *const TAG = "panasonic_paci.wlan";
 
-void PanasonicACWLAN::setup() {
-  PanasonicAC::setup();
+void PanasonicPaciWLAN::setup() {
+  PanasonicPaci::setup();
 
   this->state_ = ACState::BootListening;
   this->init_time_ = millis();
@@ -24,8 +24,8 @@ void PanasonicACWLAN::setup() {
            this->controller_address_);
 }
 
-void PanasonicACWLAN::loop() {
-  PanasonicAC::loop();
+void PanasonicPaciWLAN::loop() {
+  PanasonicPaci::loop();
   this->process_rx_buffer_();
   this->process_tx_queue_();
   this->process_active_init_();
@@ -79,7 +79,7 @@ void PanasonicACWLAN::loop() {
   }
 }
 
-void PanasonicACWLAN::control(const climate::ClimateCall &call) {
+void PanasonicPaciWLAN::control(const climate::ClimateCall &call) {
   if (this->state_ == ACState::BootListening) {
     ESP_LOGW(TAG, "Ignoring climate command while boot-listening; no valid status received yet");
     return;
@@ -185,7 +185,7 @@ void PanasonicACWLAN::control(const climate::ClimateCall &call) {
   }
 }
 
-void PanasonicACWLAN::on_eco_change(bool eco) {
+void PanasonicPaciWLAN::on_eco_change(bool eco) {
   ESP_LOGD(TAG, "Requested eco/powersave: %s", eco ? "ON" : "OFF");
   this->send_secondary_write_(eco ? PAYLOAD_ECO_ON : PAYLOAD_ECO_OFF,
                               eco ? sizeof(PAYLOAD_ECO_ON) : sizeof(PAYLOAD_ECO_OFF), CommandKind::Eco);
@@ -194,7 +194,7 @@ void PanasonicACWLAN::on_eco_change(bool eco) {
   this->update_eco(eco);
 }
 
-void PanasonicACWLAN::on_ventilation_output_change(bool connected) {
+void PanasonicPaciWLAN::on_ventilation_output_change(bool connected) {
   if (!this->ventilation_output_known()) {
     ESP_LOGW(TAG, "Ignoring ventilation output write while current admin value is unknown; scheduling read");
     this->schedule_admin_reads_(true, 0);
@@ -205,7 +205,7 @@ void PanasonicACWLAN::on_ventilation_output_change(bool connected) {
                             connected ? ADMIN_VENTILATION_CONNECTED : ADMIN_VENTILATION_NOT_CONNECTED);
 }
 
-void PanasonicACWLAN::on_remote_temperature_sensor_change(bool remote_controller) {
+void PanasonicPaciWLAN::on_remote_temperature_sensor_change(bool remote_controller) {
   if (!this->remote_temperature_sensor_known()) {
     ESP_LOGW(TAG, "Ignoring room temperature sensor write while current admin value is unknown; scheduling read");
     this->schedule_admin_reads_(true, 0);
@@ -217,7 +217,7 @@ void PanasonicACWLAN::on_remote_temperature_sensor_change(bool remote_controller
                                               : ADMIN_ROOM_TEMP_SENSOR_MAIN_UNIT);
 }
 
-void PanasonicACWLAN::on_fahrenheit_change(bool fahrenheit) {
+void PanasonicPaciWLAN::on_fahrenheit_change(bool fahrenheit) {
   if (!this->fahrenheit_unit_known()) {
     ESP_LOGW(TAG, "Ignoring temperature display unit write while current admin value is unknown; scheduling read");
     this->schedule_admin_reads_(true, 0);
@@ -228,7 +228,7 @@ void PanasonicACWLAN::on_fahrenheit_change(bool fahrenheit) {
                             fahrenheit ? ADMIN_TEMP_UNIT_FAHRENHEIT : ADMIN_TEMP_UNIT_CELSIUS);
 }
 
-void PanasonicACWLAN::process_rx_buffer_() {
+void PanasonicPaciWLAN::process_rx_buffer_() {
   std::vector<uint8_t> frame;
 
   while (this->try_extract_frame_(&frame)) {
@@ -237,7 +237,7 @@ void PanasonicACWLAN::process_rx_buffer_() {
   }
 }
 
-bool PanasonicACWLAN::try_extract_frame_(std::vector<uint8_t> *frame) {
+bool PanasonicPaciWLAN::try_extract_frame_(std::vector<uint8_t> *frame) {
   if (this->rx_buffer_.size() < 5) {
     return false;
   }
@@ -293,7 +293,7 @@ bool PanasonicACWLAN::try_extract_frame_(std::vector<uint8_t> *frame) {
   return false;
 }
 
-bool PanasonicACWLAN::looks_like_frame_start_(size_t offset) const {
+bool PanasonicPaciWLAN::looks_like_frame_start_(size_t offset) const {
   if (this->rx_buffer_.size() < offset + 4) {
     return false;
   }
@@ -328,7 +328,7 @@ bool PanasonicACWLAN::looks_like_frame_start_(size_t offset) const {
 
 
 
-bool PanasonicACWLAN::is_strict_checksumless_extended_identity_(size_t offset, size_t frame_len) const {
+bool PanasonicPaciWLAN::is_strict_checksumless_extended_identity_(size_t offset, size_t frame_len) const {
   if (frame_len < 12 || this->rx_buffer_.size() < offset + frame_len) {
     return false;
   }
@@ -364,7 +364,7 @@ bool PanasonicACWLAN::is_strict_checksumless_extended_identity_(size_t offset, s
   return printable >= 6;
 }
 
-bool PanasonicACWLAN::try_frame_length_at_(size_t offset, size_t len_index, size_t *frame_len) const {
+bool PanasonicPaciWLAN::try_frame_length_at_(size_t offset, size_t len_index, size_t *frame_len) const {
   if (this->rx_buffer_.size() <= offset + len_index) {
     return false;
   }
@@ -410,7 +410,7 @@ bool PanasonicACWLAN::try_frame_length_at_(size_t offset, size_t len_index, size
   return false;
 }
 
-uint8_t PanasonicACWLAN::xor_checksum_(const std::vector<uint8_t> &data) {
+uint8_t PanasonicPaciWLAN::xor_checksum_(const std::vector<uint8_t> &data) {
   uint8_t checksum = 0;
   for (uint8_t b : data) {
     checksum ^= b;
@@ -418,9 +418,9 @@ uint8_t PanasonicACWLAN::xor_checksum_(const std::vector<uint8_t> &data) {
   return checksum;
 }
 
-bool PanasonicACWLAN::verify_xor_(const std::vector<uint8_t> &frame) { return xor_checksum_(frame) == 0x00; }
+bool PanasonicPaciWLAN::verify_xor_(const std::vector<uint8_t> &frame) { return xor_checksum_(frame) == 0x00; }
 
-std::vector<uint8_t> PanasonicACWLAN::make_frame_(uint8_t prefix0, uint8_t prefix1, uint8_t op,
+std::vector<uint8_t> PanasonicPaciWLAN::make_frame_(uint8_t prefix0, uint8_t prefix1, uint8_t op,
                                                   const uint8_t *payload, size_t payload_len) const {
   std::vector<uint8_t> frame;
   frame.reserve(payload_len + 5);
@@ -442,30 +442,30 @@ std::vector<uint8_t> PanasonicACWLAN::make_frame_(uint8_t prefix0, uint8_t prefi
   return frame;
 }
 
-std::vector<uint8_t> PanasonicACWLAN::make_frame_(uint8_t prefix0, uint8_t prefix1, uint8_t op,
+std::vector<uint8_t> PanasonicPaciWLAN::make_frame_(uint8_t prefix0, uint8_t prefix1, uint8_t op,
                                                   const std::vector<uint8_t> &payload) const {
   return this->make_frame_(prefix0, prefix1, op, payload.data(), payload.size());
 }
 
-void PanasonicACWLAN::send_raw_frame_(const std::vector<uint8_t> &frame) {
+void PanasonicPaciWLAN::send_raw_frame_(const std::vector<uint8_t> &frame) {
   this->write_array(frame);
   this->flush();
 
   this->log_packet(frame, true);
 }
 
-void PanasonicACWLAN::queue_frame_(const std::vector<uint8_t> &frame, TxKind kind, CommandKind command_kind,
+void PanasonicPaciWLAN::queue_frame_(const std::vector<uint8_t> &frame, TxKind kind, CommandKind command_kind,
                                     uint8_t admin_code, uint8_t attempt) {
   this->tx_queue_.push_back(QueuedFrame{frame, kind, command_kind, admin_code, attempt});
   this->process_tx_queue_();
 }
 
-void PanasonicACWLAN::send_frame_(const std::vector<uint8_t> &frame, TxKind kind, CommandKind command_kind,
+void PanasonicPaciWLAN::send_frame_(const std::vector<uint8_t> &frame, TxKind kind, CommandKind command_kind,
                                   uint8_t admin_code, uint8_t attempt) {
   this->queue_frame_(frame, kind, command_kind, admin_code, attempt);
 }
 
-bool PanasonicACWLAN::can_transmit_now_() const {
+bool PanasonicPaciWLAN::can_transmit_now_() const {
   const uint32_t now = millis();
   if (this->state_ != ACState::Ready) {
     return false;
@@ -476,7 +476,7 @@ bool PanasonicACWLAN::can_transmit_now_() const {
   return true;
 }
 
-bool PanasonicACWLAN::has_admin_read_transaction_() const {
+bool PanasonicPaciWLAN::has_admin_read_transaction_() const {
   if (this->state_ == ACState::WaitingAdminValue && this->current_transaction_.kind == TxKind::WaitAdminValue) {
     return true;
   }
@@ -488,12 +488,12 @@ bool PanasonicACWLAN::has_admin_read_transaction_() const {
   return false;
 }
 
-void PanasonicACWLAN::clear_current_transaction_() {
+void PanasonicPaciWLAN::clear_current_transaction_() {
   this->state_ = ACState::Ready;
   this->current_transaction_ = QueuedFrame{};
 }
 
-void PanasonicACWLAN::complete_admin_read_transaction_() {
+void PanasonicPaciWLAN::complete_admin_read_transaction_() {
   if (this->state_ == ACState::WaitingAdminValue && this->current_transaction_.kind == TxKind::WaitAdminValue) {
     this->admin_read_step_++;
     this->clear_current_transaction_();
@@ -506,7 +506,7 @@ void PanasonicACWLAN::complete_admin_read_transaction_() {
   }
 }
 
-void PanasonicACWLAN::fail_admin_read_transaction_() {
+void PanasonicPaciWLAN::fail_admin_read_transaction_() {
   if (this->state_ == ACState::WaitingAdminValue && this->current_transaction_.kind == TxKind::WaitAdminValue) {
     this->admin_read_step_++;
     this->clear_current_transaction_();
@@ -522,7 +522,7 @@ void PanasonicACWLAN::fail_admin_read_transaction_() {
   }
 }
 
-void PanasonicACWLAN::process_tx_queue_() {
+void PanasonicPaciWLAN::process_tx_queue_() {
   const uint32_t now = millis();
 
   if (this->tx_queue_.empty() || !this->can_transmit_now_()) {
@@ -558,7 +558,7 @@ void PanasonicACWLAN::process_tx_queue_() {
   this->log_packet(item.frame, true);
 }
 
-void PanasonicACWLAN::purge_queued_command_kind_(CommandKind command_kind) {
+void PanasonicPaciWLAN::purge_queued_command_kind_(CommandKind command_kind) {
   if (command_kind == CommandKind::None) {
     return;
   }
@@ -579,7 +579,7 @@ void PanasonicACWLAN::purge_queued_command_kind_(CommandKind command_kind) {
   }
 }
 
-void PanasonicACWLAN::purge_stale_mode_change_writes_() {
+void PanasonicPaciWLAN::purge_stale_mode_change_writes_() {
   // A new mode supersedes queued mode/power and any queued temperature/fan writes
   // that were prepared for the previous mode. The fresh mode call will enqueue a
   // new POWER/MODE sequence and optionally new temp/fan writes after this purge.
@@ -589,7 +589,7 @@ void PanasonicACWLAN::purge_stale_mode_change_writes_() {
   this->purge_queued_command_kind_(CommandKind::Fan);
 }
 
-void PanasonicACWLAN::send_control_write_(const uint8_t *payload, size_t payload_len, CommandKind command_kind,
+void PanasonicPaciWLAN::send_control_write_(const uint8_t *payload, size_t payload_len, CommandKind command_kind,
                                           bool wait_for_report) {
   // Control writes are always sent from E0 with a zero destination.
   // The ESP must not impersonate the wired wall controller (0x40).
@@ -597,20 +597,20 @@ void PanasonicACWLAN::send_control_write_(const uint8_t *payload, size_t payload
                     wait_for_report ? TxKind::WaitAck : TxKind::FireAndForget, command_kind);
 }
 
-void PanasonicACWLAN::send_primary_write_(const uint8_t *payload, size_t payload_len, CommandKind command_kind,
+void PanasonicPaciWLAN::send_primary_write_(const uint8_t *payload, size_t payload_len, CommandKind command_kind,
                                           bool wait_for_report) {
   this->send_control_write_(payload, payload_len, command_kind, wait_for_report);
 }
 
 // Eco/admin writes are independent settings, not superseded by a mode change,
 // so they are not coalesced with climate control writes.
-void PanasonicACWLAN::send_secondary_write_(const uint8_t *payload, size_t payload_len, CommandKind command_kind,
+void PanasonicPaciWLAN::send_secondary_write_(const uint8_t *payload, size_t payload_len, CommandKind command_kind,
                                             bool wait_for_report) {
   this->send_frame_(this->make_frame_(FRAME_SRC_PRIMARY, FRAME_ADDR_ZERO, OP_WRITE, payload, payload_len),
                     wait_for_report ? TxKind::WaitAck : TxKind::FireAndForget, command_kind);
 }
 
-void PanasonicACWLAN::send_admin_setting_(uint8_t code, uint8_t value) {
+void PanasonicPaciWLAN::send_admin_setting_(uint8_t code, uint8_t value) {
   const uint8_t payload[]{GROUP_CONTROL, CMD_ADMIN_SETTINGS, code, value};
   // Admin writes ACK immediately with 00 E0 18 02 80 A1 ...
   // Do not hold the whole command queue waiting for a later climate status frame.
@@ -620,7 +620,7 @@ void PanasonicACWLAN::send_admin_setting_(uint8_t code, uint8_t value) {
   this->schedule_admin_reads_(true, ADMIN_READ_RETRY_DELAY);
 }
 
-bool PanasonicACWLAN::send_admin_read_(uint8_t code) {
+bool PanasonicPaciWLAN::send_admin_read_(uint8_t code) {
   const uint8_t payload[]{GROUP_CONTROL, CMD_ADMIN_SETTINGS, 0x00, code};
   const auto frame = this->make_frame_(FRAME_SRC_PRIMARY, FRAME_ADDR_ZERO, OP_READ, payload, sizeof(payload));
 
@@ -630,7 +630,7 @@ bool PanasonicACWLAN::send_admin_read_(uint8_t code) {
   return true;
 }
 
-void PanasonicACWLAN::send_outdoor_temperature_read_() {
+void PanasonicPaciWLAN::send_outdoor_temperature_read_() {
   // Panasonic app/native controller reads the outdoor-unit value with EF/21:
   //   40 00 17 07 08 80 EF 00 21 00 20 36
   // Use E0 as source. Response:
@@ -644,14 +644,14 @@ void PanasonicACWLAN::send_outdoor_temperature_read_() {
   this->queue_frame_(frame, TxKind::FireAndForget, CommandKind::Read);
 }
 
-void PanasonicACWLAN::send_info_read_(uint8_t code) {
+void PanasonicPaciWLAN::send_info_read_(uint8_t code) {
   const uint8_t payload[]{GROUP_CONTROL, code};
   const auto frame = this->make_frame_(FRAME_SRC_PRIMARY, FRAME_ADDR_ZERO, OP_READ, payload, sizeof(payload));
 
   this->queue_frame_(frame, TxKind::FireAndForget, CommandKind::Read);
 }
 
-void PanasonicACWLAN::send_extended_info_read_(uint8_t code) {
+void PanasonicPaciWLAN::send_extended_info_read_(uint8_t code) {
   // PACi cold-start has extended reads like:
   //   E0 00 17 05 08 80 EF 00 <code> <xor>
   // Use this path for outdoor/unit-side identity. Plain 08/0B reads only return indoor identity.
@@ -661,7 +661,7 @@ void PanasonicACWLAN::send_extended_info_read_(uint8_t code) {
   this->queue_frame_(frame, TxKind::FireAndForget, CommandKind::Read);
 }
 
-void PanasonicACWLAN::schedule_identity_reads_() {
+void PanasonicPaciWLAN::schedule_identity_reads_() {
   if (this->identity_read_scheduled_ || this->identity_read_completed_) {
     return;
   }
@@ -682,7 +682,7 @@ void PanasonicACWLAN::schedule_identity_reads_() {
   this->next_identity_read_at_ = now + IDENTITY_READ_DELAY;
 }
 
-void PanasonicACWLAN::process_identity_reads_() {
+void PanasonicPaciWLAN::process_identity_reads_() {
   if (!this->identity_read_scheduled_ || this->next_identity_read_at_ == 0) {
     return;
   }
@@ -728,7 +728,7 @@ void PanasonicACWLAN::process_identity_reads_() {
   }
 }
 
-void PanasonicACWLAN::update_identity_completion_() {
+void PanasonicPaciWLAN::update_identity_completion_() {
   if (this->identity_read_completed_) {
     return;
   }
@@ -740,7 +740,7 @@ void PanasonicACWLAN::update_identity_completion_() {
   }
 }
 
-void PanasonicACWLAN::schedule_admin_reads_(bool force, uint32_t delay_ms) {
+void PanasonicPaciWLAN::schedule_admin_reads_(bool force, uint32_t delay_ms) {
   const uint32_t now = millis();
 
   if (this->admin_read_scheduled_) {
@@ -766,7 +766,7 @@ void PanasonicACWLAN::schedule_admin_reads_(bool force, uint32_t delay_ms) {
   this->next_admin_read_at_ = now + delay_ms;
 }
 
-void PanasonicACWLAN::process_admin_reads_() {
+void PanasonicPaciWLAN::process_admin_reads_() {
   if (!this->admin_read_scheduled_ || this->next_admin_read_at_ == 0) {
     return;
   }
@@ -808,7 +808,7 @@ void PanasonicACWLAN::process_admin_reads_() {
   this->next_admin_read_at_ = now + ADMIN_READ_RETRY_DELAY;
 }
 
-void PanasonicACWLAN::schedule_outdoor_temperature_reads_(uint32_t delay_ms) {
+void PanasonicPaciWLAN::schedule_outdoor_temperature_reads_(uint32_t delay_ms) {
   const uint32_t now = millis();
 
   if (this->outdoor_temperature_read_scheduled_) {
@@ -819,7 +819,7 @@ void PanasonicACWLAN::schedule_outdoor_temperature_reads_(uint32_t delay_ms) {
   this->next_outdoor_temperature_read_at_ = now + delay_ms;
 }
 
-void PanasonicACWLAN::process_outdoor_temperature_reads_() {
+void PanasonicPaciWLAN::process_outdoor_temperature_reads_() {
   if (!this->outdoor_temperature_read_scheduled_ || this->next_outdoor_temperature_read_at_ == 0) {
     return;
   }
@@ -832,7 +832,7 @@ void PanasonicACWLAN::process_outdoor_temperature_reads_() {
   this->next_outdoor_temperature_read_at_ = millis() + OUTDOOR_TEMP_READ_INTERVAL;
 }
 
-void PanasonicACWLAN::process_active_init_() {
+void PanasonicPaciWLAN::process_active_init_() {
   if (this->state_ != ACState::BootListening) {
     return;
   }
@@ -860,13 +860,13 @@ void PanasonicACWLAN::process_active_init_() {
   this->schedule_active_init_retry_();
 }
 
-void PanasonicACWLAN::schedule_active_init_retry_() {
+void PanasonicPaciWLAN::schedule_active_init_retry_() {
   this->active_init_step_ = 0;
   this->next_active_init_at_ = millis() + ACTIVE_INIT_RETRY_DELAY;
   ESP_LOGW(TAG, "Full cold init sequence finished; still waiting for main status");
 }
 
-void PanasonicACWLAN::send_active_init_step_(uint8_t step) {
+void PanasonicPaciWLAN::send_active_init_step_(uint8_t step) {
   // Replay the E0-side frames from the plain "cold" capture.
   // Deliberately do NOT synthesize 40-source wall-controller frames here.
   // 40 frames are handled as traffic from the real wired controller.
@@ -946,7 +946,7 @@ void PanasonicACWLAN::send_active_init_step_(uint8_t step) {
   ESP_LOGD(TAG, "Full cold init step %u/%u", step + 1, ACTIVE_INIT_STEP_COUNT);
   this->send_raw_frame_(frame);
 }
-void PanasonicACWLAN::handle_frame_(const std::vector<uint8_t> &frame) {
+void PanasonicPaciWLAN::handle_frame_(const std::vector<uint8_t> &frame) {
   this->log_packet(frame);
 
   if (this->handle_ack_(frame)) {
@@ -982,7 +982,7 @@ void PanasonicACWLAN::handle_frame_(const std::vector<uint8_t> &frame) {
   ESP_LOGV(TAG, "Unhandled valid frame: %s", format_hex_pretty(frame).c_str());
 }
 
-bool PanasonicACWLAN::handle_ack_(const std::vector<uint8_t> &frame) {
+bool PanasonicPaciWLAN::handle_ack_(const std::vector<uint8_t> &frame) {
   if (this->state_ != ACState::WaitingAck || this->current_transaction_.kind != TxKind::WaitAck) {
     return false;
   }
@@ -1001,7 +1001,7 @@ bool PanasonicACWLAN::handle_ack_(const std::vector<uint8_t> &frame) {
   return true;
 }
 
-bool PanasonicACWLAN::handle_main_status_(const std::vector<uint8_t> &frame) {
+bool PanasonicPaciWLAN::handle_main_status_(const std::vector<uint8_t> &frame) {
   for (size_t i = 0; i + 2 < frame.size(); i++) {
     if (frame[i] != STATUS_EVENT_GROUP_0 || frame[i + 1] != STATUS_MAIN) {
       continue;
@@ -1022,7 +1022,7 @@ bool PanasonicACWLAN::handle_main_status_(const std::vector<uint8_t> &frame) {
   return false;
 }
 
-void PanasonicACWLAN::parse_main_status_payload_(const uint8_t *payload, size_t len) {
+void PanasonicPaciWLAN::parse_main_status_payload_(const uint8_t *payload, size_t len) {
   const uint8_t s0 = payload[STATUS_PAYLOAD_POWER_MODE_INDEX];
   const uint8_t s1 = payload[STATUS_PAYLOAD_FAN_INDEX];
 
@@ -1062,7 +1062,7 @@ void PanasonicACWLAN::parse_main_status_payload_(const uint8_t *payload, size_t 
   this->publish_state();
 }
 
-bool PanasonicACWLAN::handle_compact_event_(const std::vector<uint8_t> &frame) {
+bool PanasonicPaciWLAN::handle_compact_event_(const std::vector<uint8_t> &frame) {
   if (frame.size() != 9) {
     return false;
   }
@@ -1091,7 +1091,7 @@ bool PanasonicACWLAN::handle_compact_event_(const std::vector<uint8_t> &frame) {
   return true;
 }
 
-bool PanasonicACWLAN::handle_admin_response_(const std::vector<uint8_t> &frame) {
+bool PanasonicPaciWLAN::handle_admin_response_(const std::vector<uint8_t> &frame) {
   // Passive/admin write/update frames carry the code and value directly as:
   //   ... 08 07 <code> <value> ...
   // This catches settings changed by the native app/wired side as well as our own
@@ -1144,7 +1144,7 @@ bool PanasonicACWLAN::handle_admin_response_(const std::vector<uint8_t> &frame) 
   return false;
 }
 
-bool PanasonicACWLAN::handle_outdoor_temperature_(const std::vector<uint8_t> &frame) {
+bool PanasonicPaciWLAN::handle_outdoor_temperature_(const std::vector<uint8_t> &frame) {
   // 0F temperature/status block request:
   //   40 00 15 02 08 0F 50
   // It is a multi-value status block. It is not the authoritative outdoor-unit
@@ -1218,7 +1218,7 @@ bool PanasonicACWLAN::handle_outdoor_temperature_(const std::vector<uint8_t> &fr
   return false;
 }
 
-bool PanasonicACWLAN::handle_identity_response_(const std::vector<uint8_t> &frame) {
+bool PanasonicPaciWLAN::handle_identity_response_(const std::vector<uint8_t> &frame) {
   // Direct indoor PACi info:
   // E0 18 14 80 08 <ASCII model...>
   // E0 18 14 80 0B <ASCII serial...>
@@ -1285,7 +1285,7 @@ bool PanasonicACWLAN::handle_identity_response_(const std::vector<uint8_t> &fram
   return false;
 }
 
-void PanasonicACWLAN::update_admin_setting_(uint8_t code, uint8_t value) {
+void PanasonicPaciWLAN::update_admin_setting_(uint8_t code, uint8_t value) {
   switch (code) {
     case ADMIN_CODE_VENTILATION_OUTPUT:
       this->update_ventilation_output(value == ADMIN_VENTILATION_CONNECTED);
@@ -1302,7 +1302,7 @@ void PanasonicACWLAN::update_admin_setting_(uint8_t code, uint8_t value) {
   }
 }
 
-std::string PanasonicACWLAN::extract_ascii_string_(const std::vector<uint8_t> &frame, size_t start, size_t max_len) {
+std::string PanasonicPaciWLAN::extract_ascii_string_(const std::vector<uint8_t> &frame, size_t start, size_t max_len) {
   std::string out;
   const size_t end = std::min(frame.size(), start + max_len);
 
@@ -1325,7 +1325,7 @@ std::string PanasonicACWLAN::extract_ascii_string_(const std::vector<uint8_t> &f
   return out;
 }
 
-uint8_t PanasonicACWLAN::mode_to_protocol_(climate::ClimateMode mode) const {
+uint8_t PanasonicPaciWLAN::mode_to_protocol_(climate::ClimateMode mode) const {
   switch (mode) {
     case climate::CLIMATE_MODE_HEAT:
       return MODE_HEAT;
@@ -1342,7 +1342,7 @@ uint8_t PanasonicACWLAN::mode_to_protocol_(climate::ClimateMode mode) const {
   }
 }
 
-climate::ClimateMode PanasonicACWLAN::protocol_to_mode_(uint8_t protocol_mode, bool power_on) const {
+climate::ClimateMode PanasonicPaciWLAN::protocol_to_mode_(uint8_t protocol_mode, bool power_on) const {
   if (!power_on) {
     return climate::CLIMATE_MODE_OFF;
   }
@@ -1365,7 +1365,7 @@ climate::ClimateMode PanasonicACWLAN::protocol_to_mode_(uint8_t protocol_mode, b
   }
 }
 
-uint8_t PanasonicACWLAN::fan_mode_to_protocol_(climate::ClimateFanMode fan_mode) const {
+uint8_t PanasonicPaciWLAN::fan_mode_to_protocol_(climate::ClimateFanMode fan_mode) const {
   switch (fan_mode) {
     case climate::CLIMATE_FAN_AUTO:
       return FAN_AUTO;
@@ -1380,7 +1380,7 @@ uint8_t PanasonicACWLAN::fan_mode_to_protocol_(climate::ClimateFanMode fan_mode)
   }
 }
 
-uint8_t PanasonicACWLAN::fan_mode_to_protocol_(const std::string &fan_mode) const {
+uint8_t PanasonicPaciWLAN::fan_mode_to_protocol_(const std::string &fan_mode) const {
   if (fan_mode == "Auto") return FAN_AUTO;
   if (fan_mode == "High") return FAN_HIGH;
   if (fan_mode == "Medium") return FAN_MEDIUM;
@@ -1388,7 +1388,7 @@ uint8_t PanasonicACWLAN::fan_mode_to_protocol_(const std::string &fan_mode) cons
   return 0x00;
 }
 
-esphome::optional<climate::ClimateFanMode> PanasonicACWLAN::fan_mode_string_to_standard_(const std::string &fan_mode) const {
+esphome::optional<climate::ClimateFanMode> PanasonicPaciWLAN::fan_mode_string_to_standard_(const std::string &fan_mode) const {
   if (fan_mode == "Auto") return climate::CLIMATE_FAN_AUTO;
   if (fan_mode == "High") return climate::CLIMATE_FAN_HIGH;
   if (fan_mode == "Medium") return climate::CLIMATE_FAN_MEDIUM;
@@ -1396,7 +1396,7 @@ esphome::optional<climate::ClimateFanMode> PanasonicACWLAN::fan_mode_string_to_s
   return {};
 }
 
-const char *PanasonicACWLAN::protocol_to_fan_mode_(uint8_t protocol_fan) const {
+const char *PanasonicPaciWLAN::protocol_to_fan_mode_(uint8_t protocol_fan) const {
   switch (protocol_fan) {
     case STATUS_FAN_AUTO:
       return "Auto";
@@ -1412,7 +1412,7 @@ const char *PanasonicACWLAN::protocol_to_fan_mode_(uint8_t protocol_fan) const {
   }
 }
 
-bool PanasonicACWLAN::send_temperature_for_mode_(climate::ClimateMode mode, float temperature) {
+bool PanasonicPaciWLAN::send_temperature_for_mode_(climate::ClimateMode mode, float temperature) {
   const uint8_t raw = encode_temperature_raw(temperature);
 
   switch (mode) {
@@ -1453,7 +1453,7 @@ bool PanasonicACWLAN::send_temperature_for_mode_(climate::ClimateMode mode, floa
   }
 }
 
-uint8_t PanasonicACWLAN::fan_slot_for_mode_(climate::ClimateMode mode) const {
+uint8_t PanasonicPaciWLAN::fan_slot_for_mode_(climate::ClimateMode mode) const {
   switch (mode) {
     case climate::CLIMATE_MODE_HEAT_COOL:
       return FAN_SLOT_AUTO;
@@ -1476,7 +1476,7 @@ uint8_t PanasonicACWLAN::fan_slot_for_mode_(climate::ClimateMode mode) const {
   }
 }
 
-void PanasonicACWLAN::send_fan_mode_(climate::ClimateMode mode, uint8_t fan_code) {
+void PanasonicPaciWLAN::send_fan_mode_(climate::ClimateMode mode, uint8_t fan_code) {
   const float target = std::isnan(this->target_temperature) ? 24.0f : this->target_temperature;
   const uint8_t raw_target = encode_temperature_raw(target);
   const uint8_t slot = this->fan_slot_for_mode_(mode);
@@ -1500,5 +1500,5 @@ void PanasonicACWLAN::send_fan_mode_(climate::ClimateMode mode, uint8_t fan_code
   this->send_primary_write_(payload, sizeof(payload), CommandKind::Fan);
 }
 }  // namespace WLAN
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

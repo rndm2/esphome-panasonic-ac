@@ -1,12 +1,12 @@
 # AirIron Controller / Panasonic PACi UART Protocol Notes
 
-> **Scope: Panasonic PACi only.** These notes and the `panasonic_ac` component target
+> **Scope: Panasonic PACi only.** These notes and the `panasonic_paci` component target
 > Panasonic **PACi** commercial/semi-commercial systems (CZ-RTC controller bus). They are
 > **not** for Panasonic Etherea/residential split systems, Aquarea, VRF/ME, or any non-PACi
 > product. Other Panasonic lines use different protocols and are out of scope.
 
 Status: reverse-engineering notes, not an official Panasonic specification.  
-Scope: Panasonic **PACi** indoor unit **S-100PF1E5A** with outdoor unit **U-100PEY1E5**, DNSK-P11/CN-WLAN/CN-CNT style UART traffic, ESPHome component `panasonic_ac`.  
+Scope: Panasonic **PACi** indoor unit **S-100PF1E5A** with outdoor unit **U-100PEY1E5**, DNSK-P11/CN-WLAN/CN-CNT style UART traffic, ESPHome component `panasonic_paci`.  
 Last updated: 2026-06-07.
 
 ## 1. Hardware / UART

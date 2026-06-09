@@ -11,11 +11,11 @@
 #include "esphome/components/uart/uart.h"
 #include "esphome/core/component.h"
 
-#include "panasonic_ac_switch.h"
-#include "panasonic_ac_select.h"
+#include "panasonic_paci_switch.h"
+#include "panasonic_paci_select.h"
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 
 static const char *const VERSION = "0.1.0";
 
@@ -37,7 +37,7 @@ static constexpr float TEMPERATURE_TOLERANCE = 2.0f;
 static constexpr float TEMPERATURE_MIN_VALID = -30.0f;
 static constexpr float TEMPERATURE_MAX_VALID = 80.0f;
 
-class PanasonicAC : public Component, public uart::UARTDevice, public climate::Climate {
+class PanasonicPaci : public Component, public uart::UARTDevice, public climate::Climate {
  public:
   void setup() override;
   void loop() override;
@@ -48,9 +48,9 @@ class PanasonicAC : public Component, public uart::UARTDevice, public climate::C
   // Code 31: Ventilation fan output setting: Not Connected / Connected.
   // Code 32: Room temperature sensor source: Main Unit / Remote Controller.
   // Code 33: Temperature display unit: Celsius / Fahrenheit.
-  void set_ventilation_output_select(PanasonicACSelect *ventilation_output_select);
-  void set_remote_temperature_sensor_select(PanasonicACSelect *remote_temperature_sensor_select);
-  void set_temperature_unit_select(PanasonicACSelect *temperature_unit_select);
+  void set_ventilation_output_select(PanasonicPaciSelect *ventilation_output_select);
+  void set_remote_temperature_sensor_select(PanasonicPaciSelect *remote_temperature_sensor_select);
+  void set_temperature_unit_select(PanasonicPaciSelect *temperature_unit_select);
 
   // Optional sensors exposed from PACi protocol status.
   void set_target_temperature_sensor(sensor::Sensor *target_temperature_sensor);
@@ -64,9 +64,9 @@ class PanasonicAC : public Component, public uart::UARTDevice, public climate::C
 
  protected:
   switch_::Switch *eco_switch_{nullptr};
-  PanasonicACSelect *ventilation_output_select_{nullptr};
-  PanasonicACSelect *remote_temperature_sensor_select_{nullptr};
-  PanasonicACSelect *temperature_unit_select_{nullptr};
+  PanasonicPaciSelect *ventilation_output_select_{nullptr};
+  PanasonicPaciSelect *remote_temperature_sensor_select_{nullptr};
+  PanasonicPaciSelect *temperature_unit_select_{nullptr};
 
   sensor::Sensor *target_temperature_sensor_{nullptr};
   sensor::Sensor *current_temperature_sensor_{nullptr};
@@ -129,5 +129,5 @@ class PanasonicAC : public Component, public uart::UARTDevice, public climate::C
   void log_packet(const std::vector<uint8_t> &data, bool outgoing = false);
 };
 
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

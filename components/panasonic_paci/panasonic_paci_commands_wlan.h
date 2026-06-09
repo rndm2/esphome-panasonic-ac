@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 namespace WLAN {
 
 /*
@@ -71,7 +71,7 @@ static constexpr uint8_t MODE_DRY = 0x04;
 static constexpr uint8_t MODE_AUTO = 0x05;
 
 /* PACi target/current temperature encoding.
- * TEMP_RAW_OFFSET is defined once in panasonic_ac.h and reused here.
+ * TEMP_RAW_OFFSET is defined once in panasonic_paci.h and reused here.
  */
 static constexpr uint8_t TEMP_SLOT_HEAT = 0x09;
 static constexpr uint8_t TEMP_SLOT_COOL = 0x0A;
@@ -163,5 +163,5 @@ static constexpr uint8_t INFO_SERIAL = CMD_INFO_SERIAL;
 static constexpr uint8_t INFO_UNIT_EXTENDED = STATUS_EXTENDED_UNIT;
 
 }  // namespace WLAN
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

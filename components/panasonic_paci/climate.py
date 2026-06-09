@@ -7,23 +7,23 @@ import esphome.codegen as cg
 import esphome.config_validation as cv
 from esphome.components import uart, climate, sensor, switch, select, text_sensor
 
-from . import panasonic_ac_ns
+from . import panasonic_paci_ns
 
 DEPENDENCIES = ["uart"]
 AUTO_LOAD = ["sensor", "switch", "select", "text_sensor"]
 
-PanasonicAC = panasonic_ac_ns.class_(
-    "PanasonicAC", cg.Component, uart.UARTDevice, climate.Climate
+PanasonicPaci = panasonic_paci_ns.class_(
+    "PanasonicPaci", cg.Component, uart.UARTDevice, climate.Climate
 )
 
-panasonic_ac_wlan_ns = panasonic_ac_ns.namespace("WLAN")
-PanasonicACWLAN = panasonic_ac_wlan_ns.class_("PanasonicACWLAN", PanasonicAC)
+panasonic_paci_wlan_ns = panasonic_paci_ns.namespace("WLAN")
+PanasonicPaciWLAN = panasonic_paci_wlan_ns.class_("PanasonicPaciWLAN", PanasonicPaci)
 
-PanasonicACSwitch = panasonic_ac_ns.class_(
-    "PanasonicACSwitch", switch.Switch, cg.Component
+PanasonicPaciSwitch = panasonic_paci_ns.class_(
+    "PanasonicPaciSwitch", switch.Switch, cg.Component
 )
-PanasonicACSelect = panasonic_ac_ns.class_(
-    "PanasonicACSelect", select.Select, cg.Component
+PanasonicPaciSelect = panasonic_paci_ns.class_(
+    "PanasonicPaciSelect", select.Select, cg.Component
 )
 
 CONF_WLAN = "wlan"
@@ -43,10 +43,10 @@ CONF_INDOOR_SERIAL = "indoor_serial"
 CONF_OUTDOOR_MODEL = "outdoor_model"
 CONF_OUTDOOR_SERIAL = "outdoor_serial"
 
-SWITCH_SCHEMA = switch.switch_schema(PanasonicACSwitch).extend(cv.COMPONENT_SCHEMA)
-VENTILATION_OUTPUT_SELECT_SCHEMA = select.select_schema(PanasonicACSelect).extend(cv.COMPONENT_SCHEMA)
-REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA = select.select_schema(PanasonicACSelect).extend(cv.COMPONENT_SCHEMA)
-TEMPERATURE_UNIT_SELECT_SCHEMA = select.select_schema(PanasonicACSelect).extend(cv.COMPONENT_SCHEMA)
+SWITCH_SCHEMA = switch.switch_schema(PanasonicPaciSwitch).extend(cv.COMPONENT_SCHEMA)
+VENTILATION_OUTPUT_SELECT_SCHEMA = select.select_schema(PanasonicPaciSelect).extend(cv.COMPONENT_SCHEMA)
+REMOTE_TEMPERATURE_SENSOR_SELECT_SCHEMA = select.select_schema(PanasonicPaciSelect).extend(cv.COMPONENT_SCHEMA)
+TEMPERATURE_UNIT_SELECT_SCHEMA = select.select_schema(PanasonicPaciSelect).extend(cv.COMPONENT_SCHEMA)
 
 TEMPERATURE_SENSOR_SCHEMA = sensor.sensor_schema(
     unit_of_measurement=UNIT_CELSIUS,
@@ -71,7 +71,7 @@ PANASONIC_WLAN_SCHEMA = {
 
 CONFIG_SCHEMA = cv.typed_schema(
     {
-        CONF_WLAN: climate.climate_schema(PanasonicACWLAN)
+        CONF_WLAN: climate.climate_schema(PanasonicPaciWLAN)
         .extend(PANASONIC_WLAN_SCHEMA)
         .extend(uart.UART_DEVICE_SCHEMA),
     }

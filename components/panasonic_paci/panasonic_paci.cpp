@@ -1,4 +1,4 @@
-#include "panasonic_ac.h"
+#include "panasonic_paci.h"
 
 #include <cmath>
 
@@ -6,11 +6,11 @@
 #include "esphome/core/log.h"
 
 namespace esphome {
-namespace panasonic_ac {
+namespace panasonic_paci {
 
-static const char *const TAG = "panasonic_ac";
+static const char *const TAG = "panasonic_paci";
 
-climate::ClimateTraits PanasonicAC::traits() {
+climate::ClimateTraits PanasonicPaci::traits() {
   auto traits = climate::ClimateTraits();
 
   traits.add_feature_flags(climate::CLIMATE_SUPPORTS_ACTION | climate::CLIMATE_SUPPORTS_CURRENT_TEMPERATURE);
@@ -46,15 +46,15 @@ climate::ClimateTraits PanasonicAC::traits() {
   return traits;
 }
 
-void PanasonicAC::setup() {
+void PanasonicPaci::setup() {
   this->init_time_ = millis();
 
   ESP_LOGI(TAG, "Panasonic AC component v%s starting...", VERSION);
 }
 
-void PanasonicAC::loop() { this->read_data(); }
+void PanasonicPaci::loop() { this->read_data(); }
 
-void PanasonicAC::read_data() {
+void PanasonicPaci::read_data() {
   while (this->available()) {
     if (this->rx_buffer_.size() >= BUFFER_SIZE) {
       ESP_LOGW(TAG, "RX buffer overflow, clearing %u bytes", this->rx_buffer_.size());
@@ -68,23 +68,23 @@ void PanasonicAC::read_data() {
   }
 }
 
-uint8_t PanasonicAC::encode_temperature_raw(float celsius) {
+uint8_t PanasonicPaci::encode_temperature_raw(float celsius) {
   return static_cast<uint8_t>(std::round(celsius * 2.0f + TEMP_RAW_OFFSET));
 }
 
-float PanasonicAC::decode_temperature_raw(uint8_t raw) {
+float PanasonicPaci::decode_temperature_raw(uint8_t raw) {
   return (static_cast<float>(raw) - TEMP_RAW_OFFSET) / 2.0f;
 }
 
-bool PanasonicAC::is_valid_temperature_(float temperature) const {
+bool PanasonicPaci::is_valid_temperature_(float temperature) const {
   return !std::isnan(temperature) && temperature >= TEMPERATURE_MIN_VALID && temperature <= TEMPERATURE_MAX_VALID;
 }
 
-void PanasonicAC::update_target_temperature_from_raw(uint8_t raw_value) {
+void PanasonicPaci::update_target_temperature_from_raw(uint8_t raw_value) {
   this->update_target_temperature_value(decode_temperature_raw(raw_value));
 }
 
-void PanasonicAC::update_target_temperature_value(float temperature) {
+void PanasonicPaci::update_target_temperature_value(float temperature) {
   if (!this->is_valid_temperature_(temperature)) {
     ESP_LOGW(TAG, "Ignoring invalid target temperature: %.2f", temperature);
     return;
@@ -97,11 +97,11 @@ void PanasonicAC::update_target_temperature_value(float temperature) {
   }
 }
 
-void PanasonicAC::update_current_temperature_from_raw(uint8_t raw_value) {
+void PanasonicPaci::update_current_temperature_from_raw(uint8_t raw_value) {
   this->update_current_temperature_value(decode_temperature_raw(raw_value));
 }
 
-void PanasonicAC::update_current_temperature_value(float temperature) {
+void PanasonicPaci::update_current_temperature_value(float temperature) {
   if (!this->is_valid_temperature_(temperature)) {
     ESP_LOGW(TAG, "Ignoring invalid current temperature: %.2f", temperature);
     return;
@@ -115,7 +115,7 @@ void PanasonicAC::update_current_temperature_value(float temperature) {
 }
 
 
-void PanasonicAC::update_eco(bool eco) {
+void PanasonicPaci::update_eco(bool eco) {
   this->eco_state_ = eco;
   this->preset = eco ? climate::CLIMATE_PRESET_ECO : climate::CLIMATE_PRESET_NONE;
 
@@ -125,7 +125,7 @@ void PanasonicAC::update_eco(bool eco) {
 }
 
 
-void PanasonicAC::update_ventilation_output(bool connected) {
+void PanasonicPaci::update_ventilation_output(bool connected) {
   this->ventilation_output_connected_ = connected;
   this->ventilation_output_known_ = true;
 
@@ -134,7 +134,7 @@ void PanasonicAC::update_ventilation_output(bool connected) {
   }
 }
 
-void PanasonicAC::update_remote_temperature_sensor(bool remote_controller) {
+void PanasonicPaci::update_remote_temperature_sensor(bool remote_controller) {
   this->remote_temperature_sensor_ = remote_controller;
   this->remote_temperature_sensor_known_ = true;
 
@@ -143,7 +143,7 @@ void PanasonicAC::update_remote_temperature_sensor(bool remote_controller) {
   }
 }
 
-void PanasonicAC::update_fahrenheit(bool fahrenheit) {
+void PanasonicPaci::update_fahrenheit(bool fahrenheit) {
   this->fahrenheit_unit_ = fahrenheit;
   this->fahrenheit_unit_known_ = true;
 
@@ -152,25 +152,25 @@ void PanasonicAC::update_fahrenheit(bool fahrenheit) {
   }
 }
 
-void PanasonicAC::update_indoor_model(const std::string &value) {
+void PanasonicPaci::update_indoor_model(const std::string &value) {
   if (this->indoor_model_text_sensor_ != nullptr) {
     this->indoor_model_text_sensor_->publish_state(value);
   }
 }
 
-void PanasonicAC::update_indoor_serial(const std::string &value) {
+void PanasonicPaci::update_indoor_serial(const std::string &value) {
   if (this->indoor_serial_text_sensor_ != nullptr) {
     this->indoor_serial_text_sensor_->publish_state(value);
   }
 }
 
-void PanasonicAC::update_outdoor_model(const std::string &value) {
+void PanasonicPaci::update_outdoor_model(const std::string &value) {
   if (this->outdoor_model_text_sensor_ != nullptr) {
     this->outdoor_model_text_sensor_->publish_state(value);
   }
 }
 
-void PanasonicAC::update_outdoor_serial(const std::string &value) {
+void PanasonicPaci::update_outdoor_serial(const std::string &value) {
   if (this->outdoor_serial_text_sensor_ != nullptr) {
     this->outdoor_serial_text_sensor_->publish_state(value);
   }
@@ -178,7 +178,7 @@ void PanasonicAC::update_outdoor_serial(const std::string &value) {
 
 
 
-climate::ClimateAction PanasonicAC::determine_action() {
+climate::ClimateAction PanasonicPaci::determine_action() {
   if (this->mode == climate::CLIMATE_MODE_OFF) {
     return climate::CLIMATE_ACTION_OFF;
   }
@@ -208,7 +208,7 @@ climate::ClimateAction PanasonicAC::determine_action() {
   return climate::CLIMATE_ACTION_IDLE;
 }
 
-void PanasonicAC::set_eco_switch(switch_::Switch *eco_switch) {
+void PanasonicPaci::set_eco_switch(switch_::Switch *eco_switch) {
   this->eco_switch_ = eco_switch;
 
   this->eco_switch_->add_on_state_callback([this](bool state) {
@@ -219,7 +219,7 @@ void PanasonicAC::set_eco_switch(switch_::Switch *eco_switch) {
   });
 }
 
-void PanasonicAC::set_ventilation_output_select(PanasonicACSelect *ventilation_output_select) {
+void PanasonicPaci::set_ventilation_output_select(PanasonicPaciSelect *ventilation_output_select) {
   this->ventilation_output_select_ = ventilation_output_select;
 
   this->ventilation_output_select_->set_write_callback([this](const std::string &value) {
@@ -232,7 +232,7 @@ void PanasonicAC::set_ventilation_output_select(PanasonicACSelect *ventilation_o
   });
 }
 
-void PanasonicAC::set_remote_temperature_sensor_select(PanasonicACSelect *remote_temperature_sensor_select) {
+void PanasonicPaci::set_remote_temperature_sensor_select(PanasonicPaciSelect *remote_temperature_sensor_select) {
   this->remote_temperature_sensor_select_ = remote_temperature_sensor_select;
 
   this->remote_temperature_sensor_select_->set_write_callback([this](const std::string &value) {
@@ -245,7 +245,7 @@ void PanasonicAC::set_remote_temperature_sensor_select(PanasonicACSelect *remote
   });
 }
 
-void PanasonicAC::set_temperature_unit_select(PanasonicACSelect *temperature_unit_select) {
+void PanasonicPaci::set_temperature_unit_select(PanasonicPaciSelect *temperature_unit_select) {
   this->temperature_unit_select_ = temperature_unit_select;
 
   this->temperature_unit_select_->set_write_callback([this](const std::string &value) {
@@ -258,21 +258,21 @@ void PanasonicAC::set_temperature_unit_select(PanasonicACSelect *temperature_uni
   });
 }
 
-void PanasonicAC::set_target_temperature_sensor(sensor::Sensor *target_temperature_sensor) {
+void PanasonicPaci::set_target_temperature_sensor(sensor::Sensor *target_temperature_sensor) {
   this->target_temperature_sensor_ = target_temperature_sensor;
 }
 
-void PanasonicAC::set_current_temperature_sensor(sensor::Sensor *current_temperature_sensor) {
+void PanasonicPaci::set_current_temperature_sensor(sensor::Sensor *current_temperature_sensor) {
   this->current_temperature_sensor_ = current_temperature_sensor;
 }
 
 
-void PanasonicAC::set_indoor_model_text_sensor(text_sensor::TextSensor *sensor) { this->indoor_model_text_sensor_ = sensor; }
-void PanasonicAC::set_indoor_serial_text_sensor(text_sensor::TextSensor *sensor) { this->indoor_serial_text_sensor_ = sensor; }
-void PanasonicAC::set_outdoor_model_text_sensor(text_sensor::TextSensor *sensor) { this->outdoor_model_text_sensor_ = sensor; }
-void PanasonicAC::set_outdoor_serial_text_sensor(text_sensor::TextSensor *sensor) { this->outdoor_serial_text_sensor_ = sensor; }
+void PanasonicPaci::set_indoor_model_text_sensor(text_sensor::TextSensor *sensor) { this->indoor_model_text_sensor_ = sensor; }
+void PanasonicPaci::set_indoor_serial_text_sensor(text_sensor::TextSensor *sensor) { this->indoor_serial_text_sensor_ = sensor; }
+void PanasonicPaci::set_outdoor_model_text_sensor(text_sensor::TextSensor *sensor) { this->outdoor_model_text_sensor_ = sensor; }
+void PanasonicPaci::set_outdoor_serial_text_sensor(text_sensor::TextSensor *sensor) { this->outdoor_serial_text_sensor_ = sensor; }
 
-void PanasonicAC::log_packet(const std::vector<uint8_t> &data, bool outgoing) {
+void PanasonicPaci::log_packet(const std::vector<uint8_t> &data, bool outgoing) {
   if (outgoing) {
     ESP_LOGV(TAG, "TX: %s", format_hex_pretty(data).c_str());
   } else {
@@ -280,5 +280,5 @@ void PanasonicAC::log_packet(const std::vector<uint8_t> &data, bool outgoing) {
   }
 }
 
-}  // namespace panasonic_ac
+}  // namespace panasonic_paci
 }  // namespace esphome

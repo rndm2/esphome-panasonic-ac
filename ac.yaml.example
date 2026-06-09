@@ -13,7 +13,7 @@ esp32:
 
 external_components:
   source: github://rndm2/esphome-panasonic-paci
-  components: [panasonic_ac]
+  components: [panasonic_paci]
 
 logger:
 
@@ -55,8 +55,8 @@ button:
     name: "$device_friendly_name Restart"
 
 climate:
-  - platform: panasonic_ac
-    id: panasonic_ac_climate
+  - platform: panasonic_paci
+    id: panasonic_paci_climate
     type: wlan
     name: "$device_friendly_name"
 
